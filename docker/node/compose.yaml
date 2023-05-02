@@ -1,0 +1,46 @@
+version: '3.8'
+
+services: 
+  app:
+    build: 
+      context: ./app
+      dockerfile: Dockerfile
+    container_name: app
+    entrypoint: dockerize --wait tcp://mysql:3306 -timeout 15s docker-entrypoint.sh
+    networks: 
+      - node-network
+    ports: 
+      - "3000:3000"
+    depends_on: 
+       - mysql
+
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    restart: always
+    environment: 
+      - MYSQL_HOST=mysql
+      - MYSQL_DATABASE=persons
+      - MYSQL_ROOT_PASSWORD=root
+    volumes:
+      - ./init-db:/docker-entrypoint-initdb.d  
+    ports:
+      - 3306:3306          
+    networks: 
+      - node-network
+
+  http:
+    build: 
+      context: ./nginx
+      dockerfile: Dockerfile
+    container_name: nginx
+    networks: 
+      - node-network
+    ports: 
+      - "80:80"
+    depends_on: 
+       - app
+
+networks: 
+  node-network:
+    driver: bridge    
