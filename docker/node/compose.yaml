@@ -1,6 +1,15 @@
 version: '3.8'
 
 services: 
+  proxy:
+    build: 
+      context: ./nginx
+      dockerfile: Dockerfile
+    container_name: nginx
+    networks: 
+      - node-network
+    ports: 
+      - "80:80"
   app:
     build: 
       context: ./app
@@ -29,17 +38,6 @@ services:
     networks: 
       - node-network
 
-  http:
-    build: 
-      context: ./nginx
-      dockerfile: Dockerfile
-    container_name: nginx
-    networks: 
-      - node-network
-    ports: 
-      - "80:80"
-    depends_on: 
-       - app
 
 networks: 
   node-network:
