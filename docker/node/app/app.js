@@ -1,11 +1,12 @@
-const mysql = require('mysql2');
+const mysql = require('mysql2/promise');
 const express = require('express');
 const app = express();
 const env = process.env;
 
 // Create a connection to the database
-const pool = mysql.createPool({
+const config ={
   host: env.DB_HOST || 'mysql',
+  port: env.DB_PORT || '3306',
   user: env.DB_USER || 'root',
   password: env.DB_PASSWORD || 'root',
   database: env.DB_NAME || 'persons',
@@ -13,34 +14,59 @@ const pool = mysql.createPool({
   connectionLimit: env.DB_CONN_LIMIT || 2,
   queueLimit: 0,
   debug: env.DB_DEBUG || false
-});
+};
 
-console.debug(env.DB_HOST);
+const pool = mysql.createPool(config);
 
-async function query(sql, params) {
-  const [rows, fields] = await pool.promise().execute(sql, params);
+// Check connection
+pool.getConnection()
+  .then(connection => {
+    console.log('Connected to MySQL server');    
+    // Insert data
+    ['Alice', 'Bob', 'Charlie', 'David', 'Emma', 'Frank', 'Grace', 'Henry', 'Isabelle', 'Jack']
+    .forEach(async (name) => await
+      connection.execute('INSERT INTO persons (name) VALUES (?)',[name])
+      .then(result => {
+        console.log('Inserted row:', result[0].affectedRows);
+        connection.release();
+      })
+      .catch(error => {
+        console.error('Error inserting row', error);
+        connection.release();
+      }));
+    })
+  .catch(error => console.error('Error getting connection from pool', error));
 
-  return rows;
-}
-
-// Insert a new row into the 'names' table
-['Alfa','Beta','Gama','Teta'].forEach(async (name) => await query('INSERT INTO names (name) VALUES (?)', [name]));
-
+// Get connection from pool
+const list = () =>
+pool.getConnection()
+  .then(connection => {
+    // Select data
+    return connection.execute('SELECT * FROM persons')
+      .then(result => {
+        console.log('Selected rows:', result[0]);
+        return result[0];
+      })
+      .catch(error => {
+        console.error('Error selecting rows', error);
+        connection.release();
+      });
+  })
+  .catch(error => console.error('Error getting connection from pool', error));
 
 app.get('/', async (req, res) => {
-  var rows = await query('SELECT * FROM names');
-  
-  console.log('Selected rows:', rows);
 
-	var template='<html><body><h2>Fullcycle Rocks!!!</h2><table><th>Names</th>'; 
+  const rows = await list();
+
+	let template='<html><body><h2>Fullcycle Rocks!!!</h2><table><th>Names</th>'; 
+
   rows.forEach( (record, index ) => {
 		  template+='<tr><td>'+record.name +'</td></tr>';
 	});
+
   template+='</table></body></html>';
 
-	res.send(template);
-  pool.end();
-
+	res.send(template)
 });
 
 app.listen(env.HTTP_PORT|3000, () => console.log('Server ready'));

@@ -1,6 +1,19 @@
 version: '3.8'
 
 services: 
+  app:
+    build: 
+      context: ./app
+      dockerfile: Dockerfile
+    container_name: app
+    restart: always
+    networks: 
+      - node-network
+    ports: 
+      - "3000:3000"
+    depends_on: 
+       mysql: 
+        condition: service_healthy
   proxy:
     build: 
       context: ./nginx
@@ -10,19 +23,9 @@ services:
       - node-network
     ports: 
       - "80:80"
-  app:
-    build: 
-      context: ./app
-      dockerfile: Dockerfile
-    container_name: app
-    entrypoint: dockerize --wait tcp://mysql:3306 -timeout 15s docker-entrypoint.sh
-    networks: 
-      - node-network
-    ports: 
-      - "3000:3000"
-    depends_on: 
-       - mysql
-
+    depends_on:
+      - app
+      
   mysql:
     image: mysql:8.0
     container_name: mysql
@@ -37,7 +40,10 @@ services:
       - 3306:3306          
     networks: 
       - node-network
-
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 5s
+      retries: 3
 
 networks: 
   node-network:
