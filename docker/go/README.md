@@ -1,2 +1,2 @@
 ### rode o comando
-docker run rivervaladao/fullcyle
+docker run rivervaladao/fullcycle
