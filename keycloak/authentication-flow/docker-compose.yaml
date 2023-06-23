@@ -1,0 +1,17 @@
+version: '3'
+
+services:
+  app:
+    build: .
+    ports:
+      - 3000:3000
+    volumes:
+      - .:/home/node/app
+    networks:
+      - local_network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+networks:
+  local_network:
+    external: true  

@@ -1,0 +1,19 @@
+@startuml "Authorization-Code-Flow"
+actor "Resource Owner" as ResourceOwner
+participant "User Agent \n (o browser)" as UserAgent
+participant "Authorization Server\n (keycloak)"  as AuthServer
+participant "Client Application \n (minha app \n Gmail|Facebook|Github SSO)" as ClientApp
+participant "Resource Server" as ResourceServer
+
+ResourceOwner -> UserAgent: Acessa a aplicação do cliente
+UserAgent -> ClientApp: Redireciona para a URL de autorização do Authorization Server
+AuthServer -> ResourceOwner:Exibe a tela de login
+ResourceOwner -> AuthServer:Fornece as credenciais de autenticação
+AuthServer -> ResourceOwner:Exibe a tela de consentimento de acesso ao Resource Server
+ResourceOwner -> AuthServer:Concede o consentimento
+AuthServer -> ClientApp:Retorna um código de autorização 
+ClientApp -> AuthServer:Requisita um token de acesso, fornecendo o código de autorização
+AuthServer -> ClientApp:Retorna um token de acesso
+ClientApp -> ResourceServer:Requisita um recurso protegido, fornecendo o token de acesso
+ResourceServer -> ClientApp:Retorna o recurso protegido
+@enduml
